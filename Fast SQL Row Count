@@ -1,0 +1,22 @@
+
+-------------- Fast SQL Row Count --------------
+------------------------------------------------
+-- Details			:	Estimated Row count using system views that return all tables in the database
+-- Credits			:	http://www.bimonkey.com/2009/06/count-the-number-of-rows-in-every-table-in-a-database-in-no-time/
+------------------------------------------------
+
+
+SELECT  s.[name] AS [Schema]
+      , t.[name] AS [Table]
+      , SUM(p.rows) AS [RowCount]
+FROM    sys.schemas s
+        LEFT OUTER JOIN sys.tables t ON s.schema_id = t.schema_id
+        LEFT OUTER JOIN sys.partitions p ON t.object_id = p.object_id
+        LEFT OUTER JOIN sys.allocation_units a ON p.partition_id = a.container_id
+WHERE   p.index_id IN ( 0, 1 ) -- 0 heap table , 1 table with clustered index
+        AND p.rows IS NOT NULL
+        AND a.type = 1  -- row-data only , not LOB
+GROUP BY s.[name]
+      , t.[name]
+ORDER BY 1
+      , 2
